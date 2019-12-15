@@ -2,6 +2,7 @@ import toolbox_extended as te
 import toolbox_02450 as tb
 import numpy as np
 import pandas as pd
+from exam_toolbox import *
 import re
 import os
 
@@ -10,7 +11,7 @@ class exam:
     #----------------------------------------------- OPG 1-----------------------------------------------
     def opg1():
 
-        return("D")
+        return("E")
 
     #----------------------------------------------- OPG 2-----------------------------------------------
     def opg2():
