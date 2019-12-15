@@ -51,7 +51,7 @@ class prep_tools:
             # s = re.sub(" 0 ", " 0.0 ", s)
             # s = re.sub(" 1 ", " 1.0 ", s)
 
-            values = re.findall(r"\d+\.*\d*", s)
+            values = re.findall(r"-*\d+\.*\d*", s)
             values = [float(i) for i in values]
 
             if use_int:
@@ -123,10 +123,13 @@ class pca_calc:
     def proj(V, x, components = None, V_full = False):
         """
         V = V matrix from pca
-        components = pricipal components to project onto
-        V_full = whether the V amtrix contains entire V matrix (if not only the columns of the components to project on is given in V, fx for 2 compenents, V should be a N*2 matrix)
+        components = principal components to project onto
+        V_full = whether the V matrix contains entire V matrix (if not only the columns of the components to project on is given in V, fx for 2 compenents, V should be a N*2 matrix)
         x = observation to project
         """
+
+        V = np.array(V)
+        x = np.array(x)
 
         if V_full:
             assert components != None
@@ -350,7 +353,7 @@ class ensemble:
 
 class supervised:
 
-    def knn_dist_pred(df, class1, class2, K):
+    def knn_dist_pred_2d(df, class1, class2, K, show = False):
         """
         calculates predictions given a matrix with euclidean distances, can only handle two classes: red and black
         -------------------------------------------------------
@@ -365,12 +368,7 @@ class supervised:
         pred_label = []
         O = [i for i in range(1,df.shape[1]+1)]
 
-        for row in range(df.shape[0]):
-            #was used to calculate distance
-                #dist = np.abs([df.loc[row,row]-df.loc[row,i] for i in range(df.shape[1])])
-                #dist = list(dist)       
-                #dist = np.array(dist)
-            
+        for row in range(df.shape[0]):           
             dist = df.loc[row,:].values
             # sort
             dist_sort =  np.argsort(dist)
@@ -402,23 +400,70 @@ class supervised:
         
         predictions = pd.DataFrame({"Obs":O, "True_label": true_label, "Predicted_label":pred_label})
         
-        print("-"*100)
-        print("The predictions when using the {} nearest neighbors are: ".format(K))
-        print(predictions)
+        if show:
+            print("-"*100)
+            print("The predictions when using the {} nearest neighbors are: ".format(K))
+            print(predictions)
+
+        return predictions
+    
+    def knn_dist_pred(df, classes, K):
+        """
+        calculates predictions given a matrix with euclidean distances, can only handle two classes: red and black
+        -------------------------------------------------------
+        class1 = list with numbers of observations in the red class (starts at 1)
+        class2 = list with numbers of observations in the black class (starts at 1) 
+        """
+
+        classes = np.array(classes)
+
+        pred_label = []
+        O = [i for i in range(1,df.shape[1]+1)]
+
+        for row in range(df.shape[0]):
+          
+            dist = df.loc[row,:].values
+            # sort
+            dist_sort =  np.argsort(dist)
+            k_nearest_ind = dist_sort[1:K+1]
+
+            pred_classes = classes[k_nearest_ind]
+
+            unique, counts = np.unique(pred_classes, return_counts=True)
+
+            neighbors = pd.DataFrame({"class":unique, "count":counts})         
+
+            lab = neighbors[neighbors["count"] == np.max(neighbors["count"])]["class"].values
+
+            if len(lab) == 1:
+                pred_label.append(lab[0])
+            else:
+                pred_label.append(classes[dist_sort[1]])
+
+        predictions = pd.DataFrame({"Obs":O, "True_label": classes, "Predicted_label":pred_label})
 
         return predictions
 
-    def pred_stats(true_labels, pred_labels):
+    def pred_stats(true_labels, pred_labels, show = False):
         """
         calculates stats for a classifier, based on the labels predicted
+        --------------------------------------------------
+        parameters:
+        -----------
+        true_labels = list of true labels
+        pred_labels = list of predicted labels
         """ 
+        true_labels = np.array(true_labels)
+        pred_labels = np.array(pred_labels)
+
         acc = np.mean(true_labels == pred_labels)
         err = 1-acc
         results = pd.DataFrame({"Stat":["Accuracy", "Error rate"], "Value":[acc, err]})
 
-        # print("-"*100)
-        # print("The stats for the predictions are:")
-        # print(results)
+        if show:
+            print("-"*100)
+            print("The stats for the predictions are:")
+            print(results)
 
         return results
     
@@ -641,7 +686,7 @@ class anomaly:
         parameters:
         ----------------------
         df = symmetric matrix with distances
-        obs = the observation to calculate ARD for 
+        obs = the observation to calculate ARD for  (0 index)
         K = the number of nearest neighbors to consider
         """
 
@@ -759,3 +804,6 @@ class association_mining:
         return frules, rules_conf_sup
 
 #tests
+
+
+
