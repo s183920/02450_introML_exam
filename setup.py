@@ -13,7 +13,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="exam_toolbox_02450-pkg-s183920", # Replace with your own username
+    name = "exam_toolbox_02450", #name="exam_toolbox_02450-pkg-s183920", # Replace with your own username
     version="0.0.1",
     author="Lukas Leindals",
     author_email="s183920@student.dtu.dk",
