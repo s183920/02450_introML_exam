@@ -115,9 +115,11 @@ class pca_calc:
         plt.title("Variance explained")
         plt.xlim(np.min(df_var_exp["k"]), np.max(df_var_exp["k"]))
         plt.ylim(0,1)
-        plt.show()
+        if plot:
+            plt.show()
 
-        print(df_var_exp)
+        if show_df:
+            print(df_var_exp)
         return df_var_exp
 
     def proj(V, x, components = None, V_full = False):
@@ -176,7 +178,7 @@ class decision_trees:
         
         return 1 - np.sum(((v / sum(v)) *l2))
 
-    def purity_gain(root, v1, v2, purity_measure):
+    def purity_gain(root, v1, v2, purity_measure, accuracy = False):
         """
         root = list with the size of each class 
         v1 = list with the size of each class in the first branch after the split
@@ -188,6 +190,10 @@ class decision_trees:
         v2 = np.array(v2)
 
         v = np.array([v1, v2])
+
+        acc = (np.max(v1)+np.max(v2))/np.sum(v)
+        if accuracy:
+            print("The accuracy of the split is {}".format(acc))
 
         Iv = 0
 
@@ -421,7 +427,7 @@ class supervised:
         O = [i for i in range(1,df.shape[1]+1)]
 
         for row in range(df.shape[0]):
-          
+            
             dist = df.loc[row,:].values
             # sort
             dist_sort =  np.argsort(dist)
@@ -467,7 +473,7 @@ class supervised:
 
         return results
     
-    def naive_bayes(y, df, cols, col_vals, pred_class):
+    def naive_bayes_2class(y, df, cols, col_vals, pred_class):
         """
         probability of a naive bayes classifier
         -------------------------------------
@@ -513,6 +519,34 @@ class supervised:
         print("The probability that the given class is predicted by the Naïve Bayes classifier is {}".format(prob))
         return None
 
+    def naive_bayes(y, df, cols, col_vals, pred_class):
+        """
+        probability of a naive bayes classifier
+        -------------------------------------
+        parameters:
+        ----------
+        y = list of labels (starting at 0)
+        df = data frame with binary data
+        cols = columns to condition the probability on (starts at 0)
+        col_vals = the values the columns are condtioned on
+        pred_class = the class you would like to predict the probability of (starts at 0)
+        """
+        y = np.array(y)
+
+        probs = []
+        for c in range(len(np.unique(y))):
+            n = np.mean(y==c)
+            suby = df.iloc[y == c,:]
+            for i in range(len(cols)):
+                p = np.mean(suby.loc[:, cols[i]] == col_vals[i])
+                n *= p
+            probs.append(n)
+
+        prob = probs[pred_class]/np.sum(probs)
+
+        print("The probability that the given class is predicted by the Naïve Bayes classifier is {}".format(prob))
+        return None
+
 class cluster:
     def fancy_dendrogram(*args, **kwargs):
         max_d = kwargs.pop('max_d', None)
@@ -538,7 +572,7 @@ class cluster:
                 plt.axhline(y=max_d, c='k')
         return ddata
 
-    def dendro_plot(dist_df, Method, labels = None, sort = False, cutoff = None, show = True):
+    def dendro_plot(dist_df, Method, labels = None, sort = False, cutoff = None, show = True, invert_xaxis = True):
         """
         plots dendrogram given a matrix of distances and a linakge method
         ---------------------------------------------------------
@@ -558,7 +592,7 @@ class cluster:
         
         Output:
             R= dendrogram data
-            clusters = cluster labels
+            clusters = cluster labels (0 index)
         """
         
         if labels == None:
@@ -578,11 +612,15 @@ class cluster:
             max_d=cutoff,
             labels = labels)
         plt.grid()
+        if invert_xaxis:
+            plt.gca().invert_xaxis()
 
         if show:
             plt.show()
 
-        clusters = fcluster(Z, 2.9, criterion = "distance")
+        clusters = fcluster(Z, cutoff, criterion = "distance")
+        clusters = [c-1 for c in clusters]
+
         return R, clusters
 
     def cluster_similarity(x,y):
@@ -619,6 +657,7 @@ class cluster:
         #     print(names[i],": ", similarities[i])
 
         result = pd.DataFrame({"Measure":names, "Value":similarities})
+        print(result)
         return result
     
     def kmeans_1d(x, k, init = None):
@@ -638,7 +677,16 @@ class cluster:
             init = np.array(init).reshape(-1,1)
             kmeans = KMeans(n_clusters = k,  init = init).fit(x)
         
-        print("The assigned clusters are: {}".format(kmeans.predict(x)))
+        clusters = kmeans.predict(x)
+
+        centers = []
+
+        for c in np.unique(clusters):
+            centers.append(np.mean(x[clusters == c]))
+
+        centers = np.round(centers, 4)
+        print("The assigned clusters are: {}".format(clusters))
+        print("The cluster centers of the converged k-means algortihm is: {}".format(centers))
         return None
 
 
@@ -675,7 +723,7 @@ class similarity:
         #     print(names[i],": ", similarities[i])
         
         result = pd.DataFrame({"Measure":names, "Value":similarities})
-        
+        print(result)
         return result
 
 class anomaly:
@@ -750,21 +798,22 @@ class association_mining:
 
         return frules, rules_conf_sup
 
-    def rule_stats(df, X, Y):
+    def rule_stats(df, X, Y, index = 0):
         """
         calculates support and confidence of a rule
         ----------------------
         parameters:
         -----------
         df = binary dataframe with rows as transactions and colums representing the attributes
-        X = list with the X itemsets
-        Y = list with the Y itemsets
+        X = list with the X itemsets 
+        Y = list with the Y itemsets 
         """
+        X = np.array(X)-index
+        Y = np.array(Y)-index
 
         X_item = df.loc[:,X]
         Y_item = df.loc[:,Y]
         items = pd.concat([X_item, Y_item], axis = 1)
-
 
         support = np.mean(np.mean(items, axis = 1) == 1)
         confidence = np.sum(np.mean(items, axis = 1) == 1)/np.sum(np.mean(X_item, axis = 1) == 1)
@@ -788,7 +837,7 @@ class association_mining:
         Y = ["att {}".format(i) for i in Y]
         X = ["att {}".format(i) for i in X]
 
-        names = ["att {}".format(i) for i in range(0,12)]
+        names = ["att {}".format(i) for i in range(0,df.shape[1])]
         df.columns = names
 
         T = association_mining.mat2transactions(df, labels = names)
@@ -804,6 +853,10 @@ class association_mining:
         return frules, rules_conf_sup
 
 #tests
+
+
+
+
 
 
 
