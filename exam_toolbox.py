@@ -334,6 +334,7 @@ class ensemble:
     def plot_roc(true_val, pred_val):
         """
         calculates the fpr and tpr and plots a roc curve
+        to compare the outputtet graph with the possible answers, look at where the plot has a elbow
         -----------------------------------------------
         parameters:
         -----------
@@ -592,7 +593,7 @@ class cluster:
         
         Output:
             R= dendrogram data
-            clusters = cluster labels (0 index)
+            clusters = cluster labels (0 index), must set cutoff to output
         """
         
         if labels == None:
@@ -618,10 +619,12 @@ class cluster:
         if show:
             plt.show()
 
-        clusters = fcluster(Z, cutoff, criterion = "distance")
-        clusters = [c-1 for c in clusters]
-
-        return R, clusters
+        if cutoff != None:
+            clusters = fcluster(Z, cutoff, criterion = "distance")
+            clusters = [c-1 for c in clusters]
+            return R, clusters
+        else:
+            return R
 
     def cluster_similarity(x,y):
         '''
