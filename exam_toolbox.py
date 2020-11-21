@@ -43,7 +43,7 @@ class prep_tools:
         df = pd.DataFrame()
         row = 0
         for i in range(len(x)):
-            s = x[i][0]
+            s = x[i][row]
 
             # s = re.sub(r"\{0\}", " 0 ", s)
             # s = re.sub("{", " ", s)
