@@ -369,7 +369,7 @@ class ensemble:
 
         returns the area under the curve (AUC)
         """
-        fpr, tpr, threshold = metrics.roc_curve(true_val, pred_val)
+        fpr, tpr, _ = metrics.roc_curve(true_val, pred_val)
         roc_auc = metrics.auc(fpr, tpr)
 
         plt.title("Receiver Operating Characteristic")
