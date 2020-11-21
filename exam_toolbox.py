@@ -165,10 +165,10 @@ class cross_val:
 
         runs = 0
         pr_model = 0
-        for i in range(k1 + 1):
-            for i in range(k2):
+        for _ in range(k1 + 1):
+            for _ in range(k2):
                 pr_model += 1
-                for i in range(S):
+                for _ in range(S):
                     runs += 1
 
         if show_res:
